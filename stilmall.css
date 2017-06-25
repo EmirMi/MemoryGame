@@ -1,0 +1,52 @@
+html {
+		height: 100%;
+	}
+
+body {	/** bodyn ska sträcka sig runt hela skärmen och den här fonten ska användas **/
+		background-color:#FFF;
+		height: 100%;
+		font-family: 'Abel', Arial, sans-serif;
+		font-size: 20px;
+		text-align:center;
+	}
+
+
+
+body h2 {	/**Rubrik med ljusblå text, gråaktig skugga bakom den som lyfter upp texten. Fonten är Abel, ska vara 40 pixlar stor, fet och mellanrum mellan tecknen ska vara 2 pixlar**/
+		color: #00CCFF; 
+		text-shadow: 0px 1px 1px #222222;
+		font-family: 'Abel', sans-serif;
+		font-size: 42px;
+		font-weight: bold;
+		letter-spacing: 2px;
+		}
+
+#header {	/** headerboxen **/
+		width: 100%;
+		height: 70px;
+		margin:0px auto;
+		position: relative;
+		left:-70%	/** sätts till -70%" så att den hamnar utanför skärmen och glider in med hjölp av javascript-koden **/
+		}
+		
+#memory{	/** detta styr utseendet på mitt block som innehåller själva spelet **/
+		background:#FFF;
+		width:720px;
+		height:auto;
+		padding:24px;
+		margin:0px auto;
+		}
+		
+#memory > div{	/** alla divar som tillhör memoryspelet och som skapas dynamiskt i javascript-koden har detta utseende. De har samma kortbaksida, flyter in från vänster och pekaren ser ut som en vanlig länk på nätet **/
+		background: url(images/kort_bg.png) no-repeat;
+		width:100px;
+		height:100px;
+		float:left;
+		margin:10px;
+		cursor:pointer;
+			}
+		
+
+.clear 	{ /**-- klassen "clear" som rensar floaten från memorycontainern --**/
+		clear:both;
+		}

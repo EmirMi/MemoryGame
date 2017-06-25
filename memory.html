@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- för att få med de svenska tecknen å, ä och ö använder vi teckenuppsättningen UTF-8 -->
+    <title>Emir Misic Memory</title>
+    <!-- sidans namn -->
+    <link href='http://fonts.googleapis.com/css?family=Abel' rel='stylesheet' type='text/css' />
+    <!-- länk till fonten Abel hos Google Fonts -->
+    <link rel="stylesheet" href="stilmall.css" type="text/css" />
+    <!-- länk till CSS-filen -->
+    </style>
+    <script>
+        // javascriptet börjar här
+
+        var date1 = "null"; //variabeln tid sätts till "null" från början
+        var main_arr = ['images/1.png', 'images/2.png', 'images/3.png', 'images/4.png', 'images/5.png', 'images/6.png', 'images/7.png', 'images/8.png', 'images/9.png',
+            'images/10.png', 'images/11.png', 'images/12.png'
+        ]; // detta är spelets main array, härifrån hämtas bilderna och slumpas
+        var antal_par; //variabeln som bestämmer antal brickpar som ska användas i spelet
+        var antal_spelare; //variabeln för antal spelare
+        var memory_id = []; //array för att lägga till brickor från main_arr 
+        var kort_id = []; //array där vi sparar id för den specifika brickan
+        var antal_kort; //variabeln för antalet brickor som har vänts
+        var clicks; //variabeln som räknar antalet klick
+        var clicks1; //variabeln som räknar antalet klick för spelaren 1
+        var clicks2; //variabeln som räknar antalet klick för spelaren 2
+        var par; //variabeln som räknar antalet par under spelet gång 
+        var person1; //variabeln som håller reda på vilken spelare det är som spelare
+        var person2;
+        var player;
+        Array.prototype.slumpa_kort = function() { ///En metod som slumpar brickorna och används på alla arrayer, dvs. alla arrayer kommer att få samma egenskap, vilket funkar i mitt fall eftersom alla ska slumpas
+            var i = this.length,
+                j, temp; //shuffle-metoden ifrån https://www.youtube.com/watch?v=tLxBwSL3lPQ. Går igenom den grundligare i min rapport
+            while (--i > 0) {
+                j = Math.floor(Math.random() * (i + 1));
+                temp = this[j];
+                this[j] = this[i];
+                this[i] = temp;
+            }
+        }
+
+        function slideIn(el) { //funktion som får headern att glida in från vänster och "bromsa in" sista sekunden. Detta åstadkoms genom att jag sätter diven -70% till vänster dvs. utanför skärmen i CSS-filen
+            var elem = document.getElementById(el);
+            elem.style.transition = "left 1.5s ease-out 1s";
+            elem.style.left = "0px";
+        }
+
+        function start() { //funktion som anropas från formulären "player" och kollar hur många spelare man ska vara, sätter variabeln "antal_spelare" beroende på vad man väljer där
+            var players = document.getElementById('player').value;
+            if (players == "one") {
+                antal_spelare = 1;
+            } else if (players == "two") {
+                antal_spelare = 2;
+            } else {
+                return false
+            }
+            myName1(); //anropar funktionen myName1() 
+        }
+
+        function myName1() { //funktionen där den första spelaren ska fylla i sitt namn i en alert-ruta
+            person1 = prompt("Fyll i ditt namn", "Spelare 1");
+            document.getElementById("spelare").innerHTML = "";
+            document.getElementById("spelare").innerHTML = "Väkommen " + person1;
+            player = person1; //skapar denna för att ha koll på vilken spelare det är som spelar och vilka händelser som kommer efter i funktionen flip()
+        }
+
+        function myName2() { //funktionen där den första spelaren ska fylla i sitt namn i en alert-ruta
+            person2 = prompt("Fyll i ditt namn", "Spelare 2");
+            document.getElementById("spelare").innerHTML = "";
+            document.getElementById("spelare").innerHTML = "Väkommen " + person2;
+            player = person2;
+        }
+
+        function Level() { //funktionen som sätter spelets svårighetsgrad genom valen som görs i HTML-formulären. Sätter man t ex. nivån till "lätt" så sätts variabeln antal_par till 6 vilket i sin tur genererar 6 brickpar
+            var level = document.getElementById('svarighet').value;
+            if (level == "easy") {
+                antal_par = 6;
+            } else if (level == "medium") {
+                antal_par = 9;
+            } else if (level == "hard") {
+                antal_par = 12;
+            } else {
+                return false;
+            }
+            nyttSpel(); // anropar funktionen nyttSpel()
+        }
+
+        function winner() // funktioner som genom if-satser räknar ut vinnaren av spelet. Om spelaren 1 har flest försök då har spelaren 2 vunnit osv.
+            {
+                if (clicks2 > clicks1) {
+                    alert("Grattis " + person1 + "! Du vann!"); //alert-ruta som visas med vinnarens namn
+                } else if (clicks1 > clicks2) {
+                    alert("Grattis " + person2 + "! Du vann!"); //alert-ruta som visas med vinnarens namn
+                } else {
+                    alert("Det blev oavgjort!"); //alert-ruta som visas om det blir oavgjort, dvs. lika många försök
+                }
+                alert("Spela en gång till!");
+                document.getElementById('spelare').innerHTML = ""; //rensar diven "spelare"
+
+            }
+
+        function clearForm() { //funktionen som nollställer spelvalen, dvs. rensar de två formerna i HTML-koden
+            document.getElementById("form1").reset();
+            document.getElementById("form2").reset();
+        }
+
+        function nyttSpel() { //funktionen som skapar brickplanen, startar själva spelet
+            memory_arr = []; //skapar en tom array som ska fyllas med slumpade värden från main_arr
+            main_arr.slumpa_kort(); //kör metoden slumpa_kort skapad tidigare på main_arr
+            for (var i = 0; i < antal_par; i++) { //loopar igenom "main_arr" så många gånger som variabeln "antal_par" bestämmer, dvs. här bestämms svårighetsgraden
+                memory_arr.push(main_arr[i]); // vi sätter in samma bricka två gånger i "memory_arr" för att få par, annars skulle den slumpa genom alla 12 brickor från "main_arr" och vi skulle inte inte få bara dubbla brickor
+                memory_arr.push(main_arr[i]);
+            }
+            antal_kort = 0; //nollställer alla variabler innan start
+            clicks = 0;
+            par = 0;
+            var output = ''; //Skapar en ny, tom, variabel att lägga ut brickor
+            memory_arr.slumpa_kort(); //kör metoden slumpa_kort skapad tidigare på memory_arr
+            for (var i = 0; i < memory_arr.length; i++) { //for-slingan som loopar igenom den nyss skapade memory_arr
+                output += '<div id="tile_' + i + '" onclick="flip(this,\'' + memory_arr[i] + '\')"></div>'; //här skrivs alla brickor (divar) ut dynamiskt med hjälp av funktionen flip()
+            }
+            document.getElementById('memory').innerHTML = output; // alla brickor (childdivar) skrivs ut
+            document.getElementById('klick').innerHTML = ""; //diven som visar anatalet klick rensas
+            document.getElementById('klick').innerHTML += "Antal försök: " + clicks; //diven som visar anatalet klick uppdateras
+            document.getElementById('par').innerHTML = ""; //diven som visar anatalet par rensas
+            document.getElementById('par').innerHTML += "Antal hittade par: " + par; //diven som visar anatalet par uppdateras
+        }
+
+        function flip(kort, id) { //funktionen för att vända kort som använder argumentet kort och id
+            var snd = new Audio("sounds/card.wav"); // ljudet som spelas upp när brickorna vänds
+            snd.play(); // startar uppspelningen av ljudfilen
+            if (date1 == "null") { //startar tidtagningen här
+                date1 = new Date();
+            }
+            if (kort.innerHTML == "" && memory_id.length < 2) { //om kort.innerHTML är tomt och så länge memory_id arrayen är minre än 2 kommer hela den här koden under att köras
+                kort.innerHTML = '<img src="' + id + '" />'; //vi ändrar innerHTML till id på det kortet som ska visas, detta händer när man vänder på själva kortet
+                if (memory_id.length == 0) { //om längden på memory_id är 0 (så länge den inte är 2) ska man lägga till värden till båda arreyerna
+                    memory_id.push(id); //id:et ska läggas till memory_id arrayen
+                    kort_id.push(kort.id); //och kortets id läggs till i kort_id arrayen
+                } else if (memory_id.length == 1) { //samma som ovan
+                    memory_id.push(id);
+                    kort_id.push(kort.id);
+                    clicks += 1; //antalet klick ökar med 1
+                    if (memory_id[0] == memory_id[1]) { //om arrayens båda kort är samma så ökar antalet vända kort med 2 och par med 1, vi har ett par
+                        antal_kort += 2; //antal vända kort ökar med 2
+                        par += 1; //antal par ökar här med 2 för vi har hittat ett par
+                        document.getElementById('klick').innerHTML = "";
+                        document.getElementById('klick').innerHTML = ""; //diven som visar anatalet klick rensas
+                        document.getElementById('klick').innerHTML += "Antal försök: " + clicks; //diven som visar anatalet klick uppdateras
+                        document.getElementById('par').innerHTML = ""; //diven som visar anatalet par rensas
+                        document.getElementById('par').innerHTML += "Antal hittade par: " + par; //diven som visar anatalet par uppdateras
+                        // Vi rensar båda arrayer
+                        memory_id = [];
+                        kort_id = [];
+                        // Vi gör ett koll om alla par har hittats, dvs. om antalet kort som har vänts är samma som längden på memory_arr
+                        if (antal_kort == memory_arr.length) {
+                            // i så fall kommer en alert-ruta upp med ett medellande som visar på hur många försök man har hittat alla par ( denna variabel beror på svårighetsgraden ). Vi rensar HTML:n och startat ett nytt spel.
+                            date2 = new Date(); //här skapas en ny tidpunkt för att kunna få fram speltiden
+                            var tid = Math.round((date2.getTime() - date1.getTime()) / 1000); // den nya tiden - tiden från början blir speltiden. Delar med 1000 för att omvandla till sekunder och använder Math.round för att avrunda
+                            date1 = "null"; //nollstäler tiden
+                            date2 = "null";
+                            alert("Grattis! Du hittade alla " + par + " par på " + clicks + " försök.\nDin tid var " + tid + " sekunder");
+                            if (antal_spelare == 2 && player == person1) // om två spelare ska spela och detta är första spelaren så sätter vi antalet klick till clicks1
+                            {
+                                clicks1 = clicks;
+                                myName2(); //startar funktionen med den andra spelaren
+                            } else if (antal_spelare == 2 && player == person2) // om två spelare ska spela och detta är andra spelaren så sätter vi antalet klick till clicks2
+                            {
+                                clicks2 = clicks;
+                                winner(); // kör funktioner winner() för att avgöra vinnaren
+                                clearForm();
+                            } else if (antal_spelare == 1) //om det är bara en spelare som spelar så går man tillbaks till början
+                            {
+                                alert("Spela en gång till!");
+                                document.getElementById('spelare').innerHTML = ""; //rensar diven spelare
+                                clearForm(); // kör funktionen clearForm
+                            }
+                            document.getElementById('klick').innerHTML = ""; //rensar alla divar
+                            document.getElementById('par').innerHTML = "";
+                            document.getElementById('memory').innerHTML = "";
+                        }
+                    } else {
+                        function flipback() {
+                            // annars så vänder man tillbaks de två senaste korten genom att skapa 2 variabler som motsvarar två positioner i arrayen kort_id. Vi "vänder tillbaks" till den ursprungliga bakgrundsbilden.
+                            var kort1 = document.getElementById(kort_id[0]); // skapar variabler kort1 och kort2 som hämtas ifrån arrayen "kort_id"
+                            var kort2 = document.getElementById(kort_id[1]);
+                            kort1.style.background = 'url(images/kort_bg.png) no-repeat'; //för att kunna ändra bakgrunden till "kort_bg.png"
+                            kort1.innerHTML = "";
+                            kort2.style.background = 'url(images/kort_bg.png) no-repeat';
+                            kort2.innerHTML = "";
+                            document.getElementById('klick').innerHTML = "";
+                            document.getElementById('klick').innerHTML += "Antal försök: " + clicks;
+                            document.getElementById('par').innerHTML = "";
+                            document.getElementById('par').innerHTML += "Antal hittade par: " + par;
+                            // Vi rensar båda arrayer
+                            memory_id = [];
+                            kort_id = [];
+                        }
+                        setTimeout(flipback, 1000); //tiden innan brickan vänder sig tillbaks, här är det 1 s
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body onload="slideIn('header');">    <!-- här börjar bodyn och anropar funktionen slideIn som gör att headern flyter in från vänstern -->
+    <div id="header">	        <!-- här börjar headern -->
+        <h2>Emirs flaggmemory</h2>    <!--Loggan som glider in från vänster -->
+    </div>
+    Välj antal spelare:
+    <br />
+    <form id="form1">        <!--formulären där man väljer antal spelare börjar -->
+        <select name="player" id="player">
+            <option value="" disabled selected>Antal spelare</option>
+            <option value="one" onselect="one">En spelare</option>
+            <option value="two">Två spelare</option>
+        </select>
+        <br />
+        <input type="button" value="Välj" onclick="start()" />        <!-- knappen som anropar funktionen start() -->
+    </form>	 <!--formulären där man väljer antal spelare avslutas -->
+    <div id="spelare"></div>    <!-- box där spelarens namn visas -->
+	<br />
+    Välj svårighetsgrad:
+    <br />
+    <form id="form2">        <!--formulären där man väljer svårighetsgraden börjar -->
+        <select name="svarighet" id="svarighet">
+            <option value="" disabled selected>Svårighetsgrad</option>
+            <option value="easy" onselect="easy">Lätt</option>
+            <option value="medium">Mellan</option>
+            <option value="hard">Svår</option>
+        </select>
+        <br />
+        <input type="button" value="Spela" onclick="Level()" />        <!-- knappen som anropar funktionen Level() -->
+    </form>    <!--formulären där man väljer svårighetsgraden avslutas -->
+	<p>
+        <div id="memory"></div>	<!-- box som visar självbrädan -->
+    </p>
+    <p>
+        <div id="klick" class="clear"></div> <!-- box som visar antalet klick -->
+        <p>
+        <div id="par"></div>    <!-- box som visar antalet par -->
+        </p>
+
+
+</body><!-- här slutar bodyn -->
+
+</html>
